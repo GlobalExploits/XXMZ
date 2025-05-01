@@ -1,0 +1,151 @@
+-- Carrega a RedzLib V5
+local redzlib = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"
+))()
+
+-- Janela principal
+local Window = redzlib:MakeWindow({
+    Title      = "XXMZ Hub | Building Boats",
+    SubTitle   = "by XXMZ",
+    SaveFolder = "testando | redz lib v5.lua"
+})
+
+-- Aba “Auto Farm” com nome e ícone play
+local Tab1 = Window:MakeTab({"Auto Farm", "play"})
+
+-- Dropdown para escolher o farm
+local selectedOption = "Gold Block Farm"
+Tab1:AddDropdown({
+    Name          = "Seleção de Farm",
+    Options       = {"Gold Block Farm", "Gold Farm"},
+    CurrentOption = selectedOption,
+    Callback      = function(opt)
+        selectedOption = opt
+    end
+})
+
+-- Estado de execução
+local farmEnabled = false
+
+-- Função para remover colisões (noclip)
+local function noclip()
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
+-- Funções de movimento e teleporte
+local function tp(pos)
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    local hrp  = char:WaitForChild("HumanoidRootPart", 5)
+    if hrp then hrp.CFrame = CFrame.new(pos) end
+end
+
+local function slideTo(pos, speed)
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    local hrp  = char:WaitForChild("HumanoidRootPart", 5)
+    if not hrp then return end
+    while farmEnabled and (hrp.Position - pos).Magnitude > 2 do
+        hrp.Velocity = (pos - hrp.Position).Unit * speed
+        task.wait(0.05)
+    end
+    if hrp then hrp.Velocity = Vector3.zero end
+end
+
+-- Pontos fixos Gold Block Farm
+local p1 = Vector3.new(49.5,  52.0,   -851.1)
+local p2 = Vector3.new(38.7,  52.0,  -1317.3)
+local p3 = Vector3.new(52.0, -867.9,  -3592.0)
+
+-- Pontos fixos Gold Farm
+local g1 = Vector3.new(49.02,  52.98,   843.54)
+local g2 = Vector3.new(52.41,  57.20,  3197.90)
+local g3 = Vector3.new(49.68, -727.22, -3243.48)
+local g4 = Vector3.new(60.55, -873.44, -3597.39)
+
+-- Loop de farm, que sempre espera respawn e recomeça
+local function farmLoop()
+    local plr = game.Players.LocalPlayer
+
+    -- Se for Gold Block Farm, aplica noclip
+    if selectedOption == "Gold Block Farm" then
+        noclip()
+    end
+
+    while farmEnabled do
+        -- espera o personagem carregar
+        local char = plr.Character or plr.CharacterAdded:Wait()
+        repeat task.wait() until char:FindFirstChild("HumanoidRootPart")
+
+        if selectedOption == "Gold Block Farm" then
+            -- ===== Gold Block Farm =====
+            tp(p1)
+            task.wait(1)
+            slideTo(p2, 100)
+            task.wait(1)
+            tp(p3)
+            task.wait(1)
+            -- mata e aguarda respawn
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid.Health = 0 end
+            plr.CharacterAdded:Wait()
+            task.wait(1)
+
+        else
+            -- ===== Gold Farm =====
+            -- 1) Teleporta imediatamente pro ponto 1
+            tp(g1)
+            task.wait(0.5)
+
+            -- 2) Desliza até o ponto 2
+            slideTo(g2, 100)
+            task.wait(0.5)
+
+            -- 3) Desliza até o ponto 3
+            slideTo(g3, 100)
+            task.wait(0.5)
+
+            -- 4) Teleporta para o ponto final
+            tp(g4)
+            task.wait(1)
+
+            -- 5) Mata o personagem e espera respawn
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid.Health = 0 end
+            plr.CharacterAdded:Wait()
+            task.wait(1)
+        end
+    end
+end
+
+-- Toggle para ligar/desligar o farm
+Tab1:AddToggle({
+    Name    = "Ativar Auto Farm",
+    Default = false,
+    Callback = function(state)
+        farmEnabled = state
+        if state then task.spawn(farmLoop) end
+    end
+})
+
+-- Aba Admin
+local AdminTab = Window:MakeTab({"Admin", "settings"})
+AdminTab:AddButton({
+    Name = "Infinite Yield",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+-- Minimize button (opcional)
+Window:AddMinimizeButton({
+    Button = { Image = "rbxassetid://71014873973869", BackgroundTransparency = 0 },
+    Corner = { CornerRadius = UDim.new(35,1) },
+})
